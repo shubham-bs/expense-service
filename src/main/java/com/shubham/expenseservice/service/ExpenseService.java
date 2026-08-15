@@ -13,6 +13,8 @@ public interface ExpenseService {
 
     ExpenseDto createExpense(ExpenseDto expenseDto);
 
+    ExpenseDto createExpenseFromSms(String userEmail, ExpenseDto expenseDto);
+
     Page<ExpenseDto> getAllExpenses(int page, int size, String sortBy);
 
     ExpenseDto getExpense(Long id);
@@ -47,3 +49,4 @@ public interface ExpenseService {
             LocalDate endDate
     );
 }
+
