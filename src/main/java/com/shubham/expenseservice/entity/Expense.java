@@ -19,6 +19,8 @@ public class Expense {
     private Long id;
     private Long userId;
 
+    private String userEmail;
+
     private BigDecimal amount;
 
     private String currency;
