@@ -42,4 +42,6 @@ public class ExpenseDto {
 
     @NotNull(message = "Expense date is required")
     private LocalDate expenseDate;
+
+    private String source;
 }

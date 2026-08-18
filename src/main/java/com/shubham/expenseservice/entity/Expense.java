@@ -1,8 +1,9 @@
 package com.shubham.expenseservice.entity;
-import jakarta.persistence.*;
-        import lombok.*;
 
-        import java.math.BigDecimal;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -14,9 +15,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Expense {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private Long userId;
 
     private String userEmail;
@@ -40,4 +43,16 @@ public class Expense {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        createdAt = now;
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

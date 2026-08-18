@@ -30,20 +30,9 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     public ExpenseDto createExpense(ExpenseDto expenseDto) {
 
-        Expense expense = new Expense();
+        String email = getCurrentUserEmail();
 
-        expense.setAmount(expenseDto.getAmount());
-        expense.setCurrency(expenseDto.getCurrency());
-        expense.setMerchant(expenseDto.getMerchant());
-        expense.setCategory(expenseDto.getCategory());
-        expense.setDescription(expenseDto.getDescription());
-        expense.setExpenseDate(expenseDto.getExpenseDate());
-
-        String email = SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getName();
-
+        Expense expense = toEntity(expenseDto);
         expense.setUserEmail(email);
 
         Expense saved = expenseRepository.save(expense);
@@ -52,7 +41,27 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
-    public Page<ExpenseDto> getAllExpenses(int page, int size, String sortBy) {
+    public ExpenseDto createExpenseFromSms(
+            String userEmail,
+            ExpenseDto expenseDto
+    ) {
+
+        Expense expense = toEntity(expenseDto);
+
+        expense.setUserEmail(userEmail);
+        expense.setSource("SMS");
+
+        Expense saved = expenseRepository.save(expense);
+
+        return toDto(saved);
+    }
+
+    @Override
+    public Page<ExpenseDto> getAllExpenses(
+            int page,
+            int size,
+            String sortBy
+    ) {
 
         Pageable pageable = PageRequest.of(
                 page,
@@ -74,19 +83,26 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         Expense expense = expenseRepository
                 .findByIdAndUserEmail(id, email)
-                .orElseThrow(() -> new ExpenseNotFoundException(id));
+                .orElseThrow(() ->
+                        new ExpenseNotFoundException(id)
+                );
 
         return toDto(expense);
     }
 
     @Override
-    public ExpenseDto updateExpense(Long id, ExpenseDto expenseDto) {
+    public ExpenseDto updateExpense(
+            Long id,
+            ExpenseDto expenseDto
+    ) {
 
         String email = getCurrentUserEmail();
 
         Expense expense = expenseRepository
                 .findByIdAndUserEmail(id, email)
-                .orElseThrow(() -> new ExpenseNotFoundException(id));
+                .orElseThrow(() ->
+                        new ExpenseNotFoundException(id)
+                );
 
         expense.setAmount(expenseDto.getAmount());
         expense.setCurrency(expenseDto.getCurrency());
@@ -95,9 +111,23 @@ public class ExpenseServiceImpl implements ExpenseService {
         expense.setDescription(expenseDto.getDescription());
         expense.setExpenseDate(expenseDto.getExpenseDate());
 
-        Expense updatedExpense = expenseRepository.save(expense);
+        Expense updated = expenseRepository.save(expense);
 
-        return toDto(updatedExpense);
+        return toDto(updated);
+    }
+
+    @Override
+    public void deleteExpense(Long id) {
+
+        String email = getCurrentUserEmail();
+
+        Expense expense = expenseRepository
+                .findByIdAndUserEmail(id, email)
+                .orElseThrow(() ->
+                        new ExpenseNotFoundException(id)
+                );
+
+        expenseRepository.delete(expense);
     }
 
     @Override
@@ -125,12 +155,17 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
-    public List<ExpenseDto> getExpensesByExpenseDate(LocalDate expenseDate) {
+    public List<ExpenseDto> getExpensesByExpenseDate(
+            LocalDate expenseDate
+    ) {
 
         String email = getCurrentUserEmail();
 
         return expenseRepository
-                .findByExpenseDateAndUserEmail(expenseDate, email)
+                .findByExpenseDateAndUserEmail(
+                        expenseDate,
+                        email
+                )
                 .stream()
                 .map(this::toDto)
                 .toList();
@@ -156,18 +191,6 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
-    public void deleteExpense(Long id) {
-
-        String email = getCurrentUserEmail();
-
-        Expense expense = expenseRepository
-                .findByIdAndUserEmail(id, email)
-                .orElseThrow(() -> new ExpenseNotFoundException(id));
-
-        expenseRepository.delete(expense);
-    }
-
-    @Override
     public List<ExpenseDto> getExpensesByMerchant(String merchant) {
 
         String email = getCurrentUserEmail();
@@ -188,18 +211,18 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
-    public BigDecimal getMonthlySpent(int year, int month) {
+    public BigDecimal getMonthlySpent(
+            int year,
+            int month
+    ) {
 
         String email = getCurrentUserEmail();
 
         YearMonth yearMonth = YearMonth.of(year, month);
 
-        LocalDate startDate = yearMonth.atDay(1);
-        LocalDate endDate = yearMonth.atEndOfMonth();
-
         return expenseRepository.getTotalSpentBetween(
-                startDate,
-                endDate,
+                yearMonth.atDay(1),
+                yearMonth.atEndOfMonth(),
                 email
         );
     }
@@ -209,10 +232,9 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         String email = getCurrentUserEmail();
 
-        List<Object[]> results =
-                expenseRepository.getCategoryWiseTotals(email);
-
-        return results.stream()
+        return expenseRepository
+                .getCategoryWiseTotals(email)
+                .stream()
                 .map(row -> new CategorySummaryDto(
                         (String) row[0],
                         (BigDecimal) row[1]
@@ -225,10 +247,9 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         String email = getCurrentUserEmail();
 
-        List<Object[]> results =
-                expenseRepository.getMerchantWiseTotals(email);
-
-        return results.stream()
+        return expenseRepository
+                .getMerchantWiseTotals(email)
+                .stream()
                 .map(row -> new MerchantSummaryDto(
                         (String) row[0],
                         (BigDecimal) row[1]
@@ -259,6 +280,27 @@ public class ExpenseServiceImpl implements ExpenseService {
                 .getName();
     }
 
+    private Expense toEntity(ExpenseDto dto) {
+
+        Expense expense = new Expense();
+
+        expense.setAmount(dto.getAmount());
+
+        expense.setCurrency(
+                dto.getCurrency() != null
+                        ? dto.getCurrency()
+                        : "INR"
+        );
+
+        expense.setMerchant(dto.getMerchant());
+        expense.setCategory(dto.getCategory());
+        expense.setDescription(dto.getDescription());
+        expense.setExpenseDate(dto.getExpenseDate());
+        expense.setSource(dto.getSource());
+
+        return expense;
+    }
+
     private ExpenseDto toDto(Expense expense) {
 
         ExpenseDto dto = new ExpenseDto();
@@ -270,26 +312,8 @@ public class ExpenseServiceImpl implements ExpenseService {
         dto.setCategory(expense.getCategory());
         dto.setDescription(expense.getDescription());
         dto.setExpenseDate(expense.getExpenseDate());
+        dto.setSource(expense.getSource());
 
         return dto;
-    }
-
-    @Override
-    public ExpenseDto createExpenseFromSms(String userEmail, ExpenseDto expenseDto) {
-
-        Expense expense = new Expense();
-
-        expense.setUserEmail(userEmail);
-        expense.setAmount(expenseDto.getAmount());
-        expense.setCurrency("INR");
-        expense.setMerchant(expenseDto.getMerchant());
-        expense.setCategory(expenseDto.getCategory());
-        expense.setDescription(expenseDto.getDescription());
-        expense.setExpenseDate(expenseDto.getExpenseDate());
-        expense.setSource("SMS");
-
-        Expense saved = expenseRepository.save(expense);
-
-        return toDto(saved);
     }
 }

@@ -13,13 +13,23 @@ public interface ExpenseService {
 
     ExpenseDto createExpense(ExpenseDto expenseDto);
 
-    ExpenseDto createExpenseFromSms(String userEmail, ExpenseDto expenseDto);
+    ExpenseDto createExpenseFromSms(
+            String userEmail,
+            ExpenseDto expenseDto
+    );
 
-    Page<ExpenseDto> getAllExpenses(int page, int size, String sortBy);
+    Page<ExpenseDto> getAllExpenses(
+            int page,
+            int size,
+            String sortBy
+    );
 
     ExpenseDto getExpense(Long id);
 
-    ExpenseDto updateExpense(Long id, ExpenseDto expenseDto);
+    ExpenseDto updateExpense(
+            Long id,
+            ExpenseDto expenseDto
+    );
 
     void deleteExpense(Long id);
 
@@ -27,7 +37,9 @@ public interface ExpenseService {
 
     List<ExpenseDto> getExpensesBySource(String source);
 
-    List<ExpenseDto> getExpensesByExpenseDate(LocalDate expenseDate);
+    List<ExpenseDto> getExpensesByExpenseDate(
+            LocalDate expenseDate
+    );
 
     List<ExpenseDto> getExpensesByDateRange(
             LocalDate startDate,
@@ -38,7 +50,10 @@ public interface ExpenseService {
 
     BigDecimal getTotalSpent();
 
-    BigDecimal getMonthlySpent(int year, int month);
+    BigDecimal getMonthlySpent(
+            int year,
+            int month
+    );
 
     List<CategorySummaryDto> getCategorySummary();
 
@@ -49,4 +64,3 @@ public interface ExpenseService {
             LocalDate endDate
     );
 }
-
